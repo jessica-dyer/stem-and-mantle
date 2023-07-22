@@ -6,12 +6,13 @@
           <h1 class="form-title">ENTER CLIMB</h1>
         </v-col>
       </v-row>
-      <v-text-field
+      <v-autocomplete
         label="Gym"
         v-model="gym"
+        :items="gyms"
         outlined
         dense
-      ></v-text-field>
+      ></v-autocomplete>
 
       <v-row justify="center">
         <v-col cols="12" class="mb-4">
@@ -97,7 +98,8 @@
     data() {
       return {
         gym: "Vertical World: Seattle",
-        date: "",
+        gyms: ["Vertical World: Seattle", "Vertical World: North"],
+        date: new Date(),
         completed: true,
         grade_rated: "5.9",
         grade_feels: null,
