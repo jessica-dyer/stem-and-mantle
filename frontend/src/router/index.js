@@ -17,7 +17,7 @@ const routes = [
         component: () => import(/* webpackChunkName: "home" */ '@/views/Home.vue'),
       },
       {
-        path: 'hardcoded-form', // This is the URL path for the HardcodedForm component
+        path: 'add-climb', // This is the URL path for the HardcodedForm component
         name: 'HardcodedForm', // Optional name for the route
         component: HardcodedForm, // The HardcodedForm component you want to display
       },

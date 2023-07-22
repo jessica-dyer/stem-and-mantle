@@ -1,3 +1,4 @@
+import logging
 from datetime import date
 from enum import Enum
 from typing import Optional
@@ -5,6 +6,10 @@ from typing import Optional
 import asyncpg
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel, validator
+
+from climbs.constants import CLIMBING_GRADE_SCORES
+
+logger = logging.getLogger()
 
 
 class GradeEnum(str, Enum):
@@ -98,6 +103,7 @@ class ClimbingStyle(Enum):
 
 class GymClimb(BaseModel):
     user_id: int
+    training_session_id: int
     gym: Gym
     date: date
     grade_rated: GradeEnum
@@ -108,9 +114,10 @@ class GymClimb(BaseModel):
     setter: str
     notes: Optional[str]
 
-    @validator('grade_feels', pre=True, always=True)
+    @validator("grade_feels")
     def validate_grade_feels(cls, v):
         return v.value if v else None
+
 
 async def get_climbs(user_id: int, db: asyncpg.Pool = Depends()):
     query_user = "SELECT EXISTS (SELECT 1 FROM users WHERE id = $1)"
@@ -124,10 +131,12 @@ async def get_climbs(user_id: int, db: asyncpg.Pool = Depends()):
         climbs = await db.fetch(query_climbs, user_id)
         if not climbs:
             return {"message": "User has no climbs"}
-        data= [
+        data = [
             {
                 "id": climb["id"],
                 "user_id": climb["user_id"],
+                "training_session_id": climb["training_session_id"],
+                "date": climb["date"],
                 "gym": climb["gym"],
                 "style": climb["style"],
                 "grade_rated": climb["grade_rated"],
@@ -136,6 +145,7 @@ async def get_climbs(user_id: int, db: asyncpg.Pool = Depends()):
                 "completed": climb["completed"],
                 "setter": climb["setter"],
                 "notes": climb["notes"],
+                "climb_score": climb["climb_score"],
             }
             for climb in climbs
         ]
@@ -146,17 +156,20 @@ async def get_climbs(user_id: int, db: asyncpg.Pool = Depends()):
 
 
 async def create_climb(climb: GymClimb, db: asyncpg.Pool = Depends()):
+    climb_score = CLIMBING_GRADE_SCORES.get(climb.grade_rated.value, None)
+    logger.info(f"Here is the climb: {climb}")
     query = """
-        INSERT INTO climbs (user_id, gym, date, grade_rated, grade_feels, style,
-                            number_of_takes, completed, setter, notes)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        RETURNING id, user_id, gym, date, grade_rated, grade_feels, style,
-                  number_of_takes, completed, setter, notes
+        INSERT INTO climbs (user_id, training_session_id, gym, date, grade_rated, grade_feels, style,
+                            number_of_takes, completed, setter, notes, climb_score)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        RETURNING id, training_session_id, user_id, gym, date, grade_rated, grade_feels, style,
+                  number_of_takes, completed, setter, notes, climb_score
     """
     try:
         result = await db.fetchrow(
             query,
             climb.user_id,
+            climb.training_session_id,
             climb.gym.value,
             climb.date,
             climb.grade_rated.value,
@@ -166,11 +179,14 @@ async def create_climb(climb: GymClimb, db: asyncpg.Pool = Depends()):
             climb.completed,
             climb.setter,
             climb.notes,
+            climb_score,
         )
         return {
             "climb": {
                 "id": result["id"],
                 "user_id": result["user_id"],
+                "training_session_id": result["training_session_id"],
+                "date": result["date"],
                 "gym": result["gym"],
                 "style": result["style"],
                 "grade_rated": result["grade_rated"],
@@ -179,6 +195,7 @@ async def create_climb(climb: GymClimb, db: asyncpg.Pool = Depends()):
                 "completed": result["completed"],
                 "setter": result["setter"],
                 "notes": result["notes"],
+                "climb_score": result["climb_score"],
             }
         }
     except Exception as e:
