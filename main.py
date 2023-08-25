@@ -9,31 +9,43 @@ from climbs.training_session import TrainingSession, create_training_session
 from config import DATABASE_URL
 
 description = """
-ChimichangApp API helps you do awesome stuff. 🚀
+# Stem and Mantle Climbing Training API 🧗‍♀️🧗‍♂️
 
-## Items
+Welcome to the Stem and Mantle Climbing Training API – your gateway to climbing training data and analytics. 
+Elevate your climbing skills and track your progress using this robust API designed for climbers.
 
-You can **read items**.
+## Features
 
-## Users
+With the Stem and Mantle Climbing Training API, you can:
 
-You will be able to:
+- Create and manage user profiles to store your climbing journey.
+- Record training sessions.
+- Keep a comprehensive log of your climbing sessions, routes, and achievements.
 
-* **Create users** (_not implemented_).
-* **Read users** (_not implemented_).
+## Endpoints
+
+### Users
+
+- **Create User**: Create a new user profile to start your climbing journey.
+- **Read User**: Retrieve user details, training history, and climbing statistics.
+
+### Training Sessions
+
+- **Create Training Session**: Log your training sessions to track your climbing-specific workouts.
+- **Get User Climbs**: Access your training session data to monitor your training progress.
+
+### Climbs
+
+- **Create Climb**: Record your climbing achievements and challenges.
+- **Get User Climbs**: Retrieve information about the climbs you've conquered.
+
 """
 
 app = FastAPI(
-    title="ChimichangApp",
+    title="Stem and Mantle",
     description=description,
-    summary="Deadpool's favorite app. Nuff said.",
+    summary="",
     version="0.0.1",
-    terms_of_service="http://example.com/terms/",
-    contact={
-        "name": "Deadpoolio the Amazing",
-        "url": "http://x-force.example.com/contact/",
-        "email": "dp@x-force.example.com",
-    },
     license_info={
         "name": "Apache 2.0",
         "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
