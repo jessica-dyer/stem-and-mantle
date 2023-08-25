@@ -2,6 +2,7 @@ all: lint test
 
 setup:
 	poetry install --with dev
+	poetry export -f requirements.txt --output requirements.txt --without-hashes
 
 lint: setup
 	poetry run black .

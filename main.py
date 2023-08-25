@@ -37,7 +37,7 @@ app = FastAPI(
     license_info={
         "name": "Apache 2.0",
         "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
-    },
+    }
 )
 
 origins = [
@@ -52,7 +52,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 async def create_db_pool():
     return await asyncpg.create_pool(DATABASE_URL)
