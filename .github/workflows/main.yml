@@ -24,10 +24,10 @@ jobs:
         pip install -r requirements.txt
 
     - name: Format code with Black
-      run: black .
+      run: black --check .
 
     - name: Lint code with Ruff
-      run: ruff lint
+      run: ruff .
 
     - name: Run tests
       run: pytest
