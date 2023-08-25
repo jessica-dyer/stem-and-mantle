@@ -1,4 +1,3 @@
-
 import asyncpg
 from fastapi import Depends, FastAPI
 from starlette.middleware.cors import CORSMiddleware
