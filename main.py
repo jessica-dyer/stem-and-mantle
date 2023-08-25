@@ -53,18 +53,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-async def create_db_pool():
-    return await asyncpg.create_pool(DATABASE_URL)
+async def create_db_connection():
+    return await asyncpg.connect(DATABASE_URL)
 
 
 @app.on_event("startup")
 async def startup_db():
-    app.state.db_pool = await create_db_pool()
+    app.state.db_connection = await create_db_connection()
 
 
 @app.on_event("shutdown")
 async def shutdown_db():
-    await app.state.db_pool.close()
+    await app.state.db_connection.close()
 
 
 @app.post("/login")
@@ -73,25 +73,25 @@ def login(username: str, password: str):
 
 
 @app.post("/users/", response_model=dict)
-async def create_new_user(user: UserCreate, db: asyncpg.Pool = Depends(create_db_pool)):
+async def create_new_user(user: UserCreate, db: asyncpg.Pool = Depends(create_db_connection)):
     return await create_user(user, db)
 
 
 @app.get("/users/{user_id}", response_model=dict)
-async def read_user(user_id: int, db: asyncpg.Pool = Depends(create_db_pool)):
+async def read_user(user_id: int, db: asyncpg.Pool = Depends(create_db_connection)):
     return await get_user(user_id, db=db)
 
 
 @app.post("/training_sessions/", response_model=dict)
-async def create_user_training_session(training_session: TrainingSession, db: asyncpg.Pool = Depends(create_db_pool)):
+async def create_user_training_session(training_session: TrainingSession, db: asyncpg.Pool = Depends(create_db_connection)):
     return await create_training_session(training_session, db)
 
 
 @app.get("/users/{user_id}/climbs", response_model=dict)
-async def get_user_climbs(user_id: int, db: asyncpg.Pool = Depends(create_db_pool)):
+async def get_user_climbs(user_id: int, db: asyncpg.Pool = Depends(create_db_connection)):
     return await get_climbs(user_id, db)
 
 
 @app.post("/climbs/", response_model=dict)
-async def create_new_climb(climb: GymClimb, db: asyncpg.Pool = Depends(create_db_pool)):
+async def create_new_climb(climb: GymClimb, db: asyncpg.Pool = Depends(create_db_connection)):
     return await create_climb(climb, db)
