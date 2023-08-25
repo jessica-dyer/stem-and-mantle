@@ -11,7 +11,7 @@ from config import DATABASE_URL
 description = """
 # Stem and Mantle Climbing Training API 🧗‍♀️🧗‍♂️
 
-Welcome to the Stem and Mantle Climbing Training API – your gateway to climbing training data and analytics. 
+Welcome to the Stem and Mantle Climbing Training API – your gateway to climbing training data and analytics.
 Elevate your climbing skills and track your progress using this robust API designed for climbers.
 
 ## Features
@@ -49,7 +49,7 @@ app = FastAPI(
     license_info={
         "name": "Apache 2.0",
         "url": "https://www.apache.org/licenses/LICENSE-2.0.html",
-    }
+    },
 )
 
 origins = [
@@ -64,6 +64,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 async def create_db_connection():
     return await asyncpg.connect(DATABASE_URL)
@@ -95,7 +96,9 @@ async def read_user(user_id: int, db: asyncpg.Pool = Depends(create_db_connectio
 
 
 @app.post("/training_sessions/", response_model=dict)
-async def create_user_training_session(training_session: TrainingSession, db: asyncpg.Pool = Depends(create_db_connection)):
+async def create_user_training_session(
+    training_session: TrainingSession, db: asyncpg.Pool = Depends(create_db_connection)
+):
     return await create_training_session(training_session, db)
 
 
