@@ -7,7 +7,7 @@ from auth.login import login_user
 from auth.user import UserCreate, create_user, get_user
 from climbs.climb import GymClimb, create_climb, get_climbs
 from climbs.training_session import TrainingSession, create_training_session
-from config import SQLALCHEMY_DATABASE_URI
+from config import DATABASE_URL
 
 description = """
 ChimichangApp API helps you do awesome stuff. 🚀
@@ -56,7 +56,7 @@ app.add_middleware(
 
 
 async def create_db_pool():
-    return await asyncpg.create_pool(SQLALCHEMY_DATABASE_URI)
+    return await asyncpg.create_pool(DATABASE_URL)
 
 
 @app.on_event("startup")

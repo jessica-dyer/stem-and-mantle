@@ -1,1 +1,3 @@
-SQLALCHEMY_DATABASE_URI = "postgresql://postgres:password@localhost:5432/stem_and_mantle"
+import os
+
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/mylocaldb")
