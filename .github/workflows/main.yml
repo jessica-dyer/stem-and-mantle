@@ -27,7 +27,7 @@ jobs:
       run: black .
 
     - name: Lint code with Ruff
-      run: ruff lint
+      run: ruff .
 
     - name: Run tests
       run: pytest
