@@ -1,9 +1,10 @@
 import asyncpg
 from fastapi import Depends, FastAPI
+from fastapi.security import OAuth2PasswordRequestForm
 from starlette.middleware.cors import CORSMiddleware
 
-from auth.login import login_user
-from auth.user import UserCreate, create_user, get_user
+from auth.login import TokenSchema, get_current_user, user_login
+from auth.user import UserCreate, UserOut, create_user, get_user
 from climbs.climb import GymClimb, create_climb, get_climbs
 from climbs.training_session import TrainingSession, create_training_session
 from config import DATABASE_URL
@@ -80,12 +81,12 @@ async def shutdown_db():
     await app.state.db_connection.close()
 
 
-@app.post("/login")
-def login(username: str, password: str):
-    return login_user(username, password)
+@app.post("/login", summary="Create access and refresh tokens for user", response_model=TokenSchema)
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: asyncpg.Pool = Depends(create_db_connection)):
+    return await user_login(form_data, db)
 
 
-@app.post("/users/", response_model=dict)
+@app.post("/signup/", response_model=dict)
 async def create_new_user(user: UserCreate, db: asyncpg.Pool = Depends(create_db_connection)):
     return await create_user(user, db)
 
@@ -110,3 +111,8 @@ async def get_user_climbs(user_id: int, db: asyncpg.Pool = Depends(create_db_con
 @app.post("/climbs/", response_model=dict)
 async def create_new_climb(climb: GymClimb, db: asyncpg.Pool = Depends(create_db_connection)):
     return await create_climb(climb, db)
+
+
+@app.get("/me", summary="Get details of currently logged in user", response_model=UserOut)
+async def get_me(user=Depends(get_current_user)):
+    return user
