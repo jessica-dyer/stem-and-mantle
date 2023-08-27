@@ -1,7 +1,7 @@
-import asyncpg
-from fastapi import Depends, HTTPException, status
+from fastapi import HTTPException, status
 from pydantic import BaseModel, EmailStr, Field
 
+from rest.database import db_execute_one
 from utils import get_hashed_password
 
 
@@ -24,10 +24,13 @@ class SystemUser(UserOut):
     password: str
 
 
-async def get_user(user_id: int, db: asyncpg.Pool = Depends()):
-    query = "SELECT id, username, created_at, updated_at FROM users WHERE id = $1"
+async def get_user(user_id: int):
+    print("i am in the get user function")
+    query = "SELECT id, username, created_at, updated_at FROM users WHERE id = %(user_id)s"
     try:
-        result = await db.fetchrow(query, user_id)
+        args = {"user_id": user_id}
+        print(user_id)
+        result = await db_execute_one(query=query, args=args)
         if result is None:
             raise HTTPException(status_code=404, detail="User not found")
         return {
@@ -40,23 +43,26 @@ async def get_user(user_id: int, db: asyncpg.Pool = Depends()):
         raise HTTPException(status_code=500, detail=f"Error fetching user: {str(e)}") from e
 
 
-async def create_user(user_data: UserCreate, db: asyncpg.Pool = Depends()):
-    query = "SELECT id, username FROM users WHERE username = $1"
-    user = await db.fetchrow(query, user_data.username)
+async def create_user(user_data: UserCreate):
+    query = "SELECT id, username FROM users WHERE username = %(username)s"
+    args = {"username": user_data.username}
+    user = await db_execute_one(query=query, args=args)
     if user is not None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User with this email already exist")
 
     username = user_data.username
     hashed_password = get_hashed_password(user_data.password)
 
-    query = "INSERT INTO users (username, password, created_at, updated_at) VALUES ($1, $2, DEFAULT, DEFAULT) RETURNING id, username, created_at, updated_at"
+    query = "INSERT INTO users (username, password, created_at, updated_at) VALUES (%(username)s, %(password)s, DEFAULT, DEFAULT) RETURNING id, username, created_at, updated_at"
+    args = {"username": username, "password": hashed_password}
     try:
-        result = await db.fetchrow(query, username, hashed_password)
-        return {
-            "id": result["id"],
-            "username": result["username"],
-            "created_at": result["created_at"],
-            "updated_at": result["updated_at"],
-        }
+        result = await db_execute_one(query=query, args=args)
+        if result:
+            return {
+                "id": result["id"],
+                "username": result["username"],
+                "created_at": result["created_at"],
+                "updated_at": result["updated_at"],
+            }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating user: {str(e)}") from e

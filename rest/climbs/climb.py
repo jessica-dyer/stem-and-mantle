@@ -3,11 +3,11 @@ from datetime import date
 from enum import Enum
 from typing import Optional
 
-import asyncpg
-from fastapi import Depends, HTTPException
+from fastapi import HTTPException
 from pydantic import BaseModel, validator
 
-from climbs.constants import CLIMBING_GRADE_SCORES
+from rest.climbs.constants import CLIMBING_GRADE_SCORES
+from rest.database import db_execute_one, query_database_many
 
 logger = logging.getLogger()
 
@@ -102,7 +102,6 @@ class ClimbingStyle(Enum):
 
 
 class GymClimb(BaseModel):
-    user_id: int
     training_session_id: int
     gym: Gym
     date: date
@@ -119,16 +118,15 @@ class GymClimb(BaseModel):
         return v.value if v else None
 
 
-async def get_climbs(user_id: int, db: asyncpg.Pool = Depends()):
-    query_user = "SELECT EXISTS (SELECT 1 FROM users WHERE id = $1)"
-    query_climbs = "SELECT * from CLIMBS WHERE user_id = $1"
-
-    user_exists = await db.fetchval(query_user, user_id)
+async def get_climbs(user_id: int):
+    query_user = "SELECT EXISTS (SELECT 1 FROM users WHERE id = %(user_id)s);"
+    query_climbs = "SELECT * from CLIMBS WHERE user_id = %(user_id)s;"
+    args = {"user_id": user_id}
+    user_exists = await query_database_many(query=query_user, args=args)
     if not user_exists:
         raise HTTPException(status_code=404, detail="User not found")
-
     try:
-        climbs = await db.fetch(query_climbs, user_id)
+        climbs = await query_database_many(query=query_climbs, args=args)
         if not climbs:
             return {"message": "User has no climbs"}
         data = [
@@ -151,52 +149,51 @@ async def get_climbs(user_id: int, db: asyncpg.Pool = Depends()):
         ]
         return {"climbs": data}
     except Exception as e:
-        # Handle any other potential database errors
         raise HTTPException(status_code=500, detail=f"Error fetching climbs: {str(e)}") from e
 
 
-async def create_climb(climb: GymClimb, db: asyncpg.Pool = Depends()):
+async def create_climb(user_id: int, climb: GymClimb):
     climb_score = CLIMBING_GRADE_SCORES.get(climb.grade_rated.value, None)
-    logger.info(f"Here is the climb: {climb}")
+    args = {
+        "user_id": user_id,
+        "training_session_id": climb.training_session_id,
+        "gym": climb.gym.value,
+        "date": climb.date,
+        "grade_rated": climb.grade_rated.value,
+        "grade_feels": climb.grade_feels,
+        "style": climb.style.value,
+        "number_of_takes": climb.number_of_takes,
+        "completed": climb.completed,
+        "setter": climb.setter,
+        "notes": climb.notes,
+        "climb_score": climb_score,
+    }
     query = """
         INSERT INTO climbs (user_id, training_session_id, gym, date, grade_rated, grade_feels, style,
                             number_of_takes, completed, setter, notes, climb_score)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        VALUES (%(user_id)s, %(training_session_id)s, %(gym)s, %(date)s, %(grade_rated)s, %(grade_feels)s, %(style)s, %(number_of_takes)s, %(completed)s, %(setter)s, %(notes)s, %(climb_score)s)
         RETURNING id, training_session_id, user_id, gym, date, grade_rated, grade_feels, style,
                   number_of_takes, completed, setter, notes, climb_score
     """
     try:
-        result = await db.fetchrow(
-            query,
-            climb.user_id,
-            climb.training_session_id,
-            climb.gym.value,
-            climb.date,
-            climb.grade_rated.value,
-            climb.grade_feels,
-            climb.style.value,
-            climb.number_of_takes,
-            climb.completed,
-            climb.setter,
-            climb.notes,
-            climb_score,
-        )
-        return {
-            "climb": {
-                "id": result["id"],
-                "user_id": result["user_id"],
-                "training_session_id": result["training_session_id"],
-                "date": result["date"],
-                "gym": result["gym"],
-                "style": result["style"],
-                "grade_rated": result["grade_rated"],
-                "grade_feels": result["grade_feels"],
-                "number_of_takes": result["number_of_takes"],
-                "completed": result["completed"],
-                "setter": result["setter"],
-                "notes": result["notes"],
-                "climb_score": result["climb_score"],
+        result = await db_execute_one(query=query, args=args)
+        if result:
+            return {
+                "climb": {
+                    "id": result["id"],
+                    "user_id": result["user_id"],
+                    "training_session_id": result["training_session_id"],
+                    "date": result["date"],
+                    "gym": result["gym"],
+                    "style": result["style"],
+                    "grade_rated": result["grade_rated"],
+                    "grade_feels": result["grade_feels"],
+                    "number_of_takes": result["number_of_takes"],
+                    "completed": result["completed"],
+                    "setter": result["setter"],
+                    "notes": result["notes"],
+                    "climb_score": result["climb_score"],
+                }
             }
-        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating climb: {str(e)}") from e
