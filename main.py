@@ -1,13 +1,12 @@
-import asyncpg
 from fastapi import Depends, FastAPI
 from fastapi.security import OAuth2PasswordRequestForm
 from starlette.middleware.cors import CORSMiddleware
 
-from auth.login import TokenSchema, get_current_user, user_login
-from auth.user import UserCreate, UserOut, create_user, get_user
-from climbs.climb import GymClimb, create_climb, get_climbs
-from climbs.training_session import TrainingSession, create_training_session
-from config import DATABASE_URL
+from rest.auth.login import TokenSchema, get_current_user, user_login
+from rest.auth.user import UserCreate, UserOut, create_user, get_user
+from rest.climbs.climb import GymClimb, create_climb, get_climbs
+from rest.climbs.training_session import TrainingSession, create_training_session
+from rest.database import pool
 
 description = """
 # Stem and Mantle Climbing Training API 🧗‍♀️🧗‍♂️
@@ -67,50 +66,44 @@ app.add_middleware(
 )
 
 
-async def create_db_connection():
-    return await asyncpg.connect(DATABASE_URL)
-
-
 @app.on_event("startup")
-async def startup_db():
-    app.state.db_connection = await create_db_connection()
+async def open_pool():
+    await pool.open()
 
 
 @app.on_event("shutdown")
-async def shutdown_db():
-    await app.state.db_connection.close()
+async def close_pool():
+    await pool.close()
 
 
 @app.post("/login", summary="Create access and refresh tokens for user", response_model=TokenSchema)
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: asyncpg.Pool = Depends(create_db_connection)):
-    return await user_login(form_data, db)
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    return await user_login(form_data)
 
 
-@app.post("/signup/", response_model=dict)
-async def create_new_user(user: UserCreate, db: asyncpg.Pool = Depends(create_db_connection)):
-    return await create_user(user, db)
+@app.post("/signup", summary="Create new user", response_model=dict)
+async def create_new_user(user: UserCreate):
+    return await create_user(user)
 
 
-@app.get("/users/{user_id}", response_model=dict)
-async def read_user(user_id: int, db: asyncpg.Pool = Depends(create_db_connection)):
-    return await get_user(user_id, db=db)
+@app.get("/user/details", summary="Get user details", response_model=dict)
+async def get_user_details(user=Depends(get_current_user)):
+    return await get_user(user.id)
 
 
-@app.post("/training_sessions/", response_model=dict)
-async def create_user_training_session(
-    training_session: TrainingSession, db: asyncpg.Pool = Depends(create_db_connection)
-):
-    return await create_training_session(training_session, db)
+@app.post("/training_session/create", summary="Create new training session", response_model=dict)
+async def create_user_training_session(training_session: TrainingSession, user=Depends(get_current_user)):
+    return await create_training_session(user_id=user.id, training_session=training_session)
 
 
-@app.get("/users/{user_id}/climbs", response_model=dict)
-async def get_user_climbs(user_id: int, db: asyncpg.Pool = Depends(create_db_connection)):
-    return await get_climbs(user_id, db)
+@app.get("/climbs", response_model=dict)
+async def get_user_climbs(user=Depends(get_current_user)):
+    return await get_climbs(user.id)
 
 
-@app.post("/climbs/", response_model=dict)
-async def create_new_climb(climb: GymClimb, db: asyncpg.Pool = Depends(create_db_connection)):
-    return await create_climb(climb, db)
+@app.post("/climbs/create", response_model=dict)
+async def create_new_climb(climb: GymClimb, user=Depends(get_current_user)):
+    return await create_climb(user_id=user.id, climb=climb)
 
 
 @app.get("/me", summary="Get details of currently logged in user", response_model=UserOut)

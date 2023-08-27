@@ -1,14 +1,13 @@
 from datetime import datetime
 
-import asyncpg
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import jwt
 from jose.exceptions import JWTError
 from pydantic import BaseModel, ValidationError
 
-from auth.user import UserOut
-from config import DATABASE_URL
+from rest.auth.user import UserOut
+from rest.database import db_execute_one
 from utils import (
     ALGORITHM,
     JWT_SECRET_KEY,
@@ -35,9 +34,10 @@ class SystemUser(UserOut):
     password: str
 
 
-async def user_login(form_data: OAuth2PasswordRequestForm = Depends(), db: asyncpg.Pool = Depends()):
-    query = "SELECT username, password FROM users WHERE username = $1"
-    user = await db.fetchrow(query, form_data.username)
+async def user_login(form_data: OAuth2PasswordRequestForm = Depends()):
+    query = "SELECT username, password FROM users WHERE username = %(username)s"
+    args = {"username": form_data.username}
+    user = await db_execute_one(query=query, args=args)
     if user is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect email or password")
 
@@ -68,12 +68,9 @@ async def get_current_user(token: str = Depends(reuseable_oauth)) -> SystemUser:
             headers={"WWW-Authenticate": "Bearer"},
         ) from e
 
-    query = "SELECT id, username, password FROM users WHERE username = $1"
-    pool = await asyncpg.create_pool(DATABASE_URL)
-
-    async with pool.acquire() as connection:
-        async with connection.transaction():
-            user = await connection.fetchrow(query, token_data.sub)
+    query = "SELECT id, username, password FROM users WHERE username = %(username)s"
+    args = {"username": token_data.sub}
+    user = await db_execute_one(query=query, args=args)
 
     if user is None:
         raise HTTPException(
