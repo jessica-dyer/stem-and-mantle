@@ -1,4 +1,3 @@
-
 import asyncpg
 from fastapi import Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr, Field
