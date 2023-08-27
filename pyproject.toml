@@ -40,6 +40,9 @@ jwt = "^1.3.1"
 asyncpg = "^0.28.0"
 email-validator = "^2.0.0.post2"
 gunicorn = "^21.2.0"
+python-jose = {extras = ["cryptography"], version = "^3.0.0"}
+python-multipart = "^0.0.6"
+passlib = {extras = ["bcrypt"], version = "^1.7.0"}
 
 
 [build-system]
