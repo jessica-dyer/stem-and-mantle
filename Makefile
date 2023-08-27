@@ -9,7 +9,7 @@ lint: setup
 	poetry run ruff . --fix
 
 test: setup
-	# poetry run pytest tests/unit
+	poetry run pytest tests
 
 run: setup 
 	poetry run uvicorn main:app --reload

@@ -1,4 +1,4 @@
-from climbs.constants import CLIMBING_GRADE_SCORES
+from rest.climbs.constants import CLIMBING_GRADE_SCORES
 
 
 def test_score_climb():
