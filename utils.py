@@ -8,8 +8,8 @@ from passlib.context import CryptContext
 ACCESS_TOKEN_EXPIRE_MINUTES = 30  # 30 minutes
 REFRESH_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 ALGORITHM = "HS256"
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "123456fdafds")  # should be kept secret
-JWT_REFRESH_SECRET_KEY = os.getenv("JWT_REFRESH_SECRET_KEY", "123456fdafds")  # should be kept secret
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "DJvv2XjasvzOplsx07PBDFIdQ")  # should be kept secret
+JWT_REFRESH_SECRET_KEY = os.getenv("JWT_REFRESH_SECRET_KEY", "MnOm8PGYjewWC9is0utwxDTLY")  # should be kept secret
 
 password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
