@@ -20,16 +20,10 @@ class UserOut(BaseModel):
     username: str
 
 
-class SystemUser(UserOut):
-    password: str
-
-
 async def get_user(user_id: int):
-    print("i am in the get user function")
     query = "SELECT id, username, created_at, updated_at FROM users WHERE id = %(user_id)s"
     try:
         args = {"user_id": user_id}
-        print(user_id)
         result = await db_execute_one(query=query, args=args)
         if result is None:
             raise HTTPException(status_code=404, detail="User not found")
