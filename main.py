@@ -2,10 +2,19 @@ from fastapi import Depends, FastAPI
 from fastapi.security import OAuth2PasswordRequestForm
 from starlette.middleware.cors import CORSMiddleware
 
-from rest.auth.login import TokenSchema, get_current_user, user_login
+from rest.auth.login import (
+    TokenSchema,
+    get_current_user,
+    refresh_access_token,
+    user_login,
+)
 from rest.auth.user import UserCreate, create_user, get_user
 from rest.climbs.climb import GymClimb, create_climb, get_climbs
-from rest.climbs.training_session import TrainingSession, create_training_session
+from rest.climbs.training_session import (
+    TrainingSession,
+    create_training_session,
+    get_training_sessions,
+)
 from rest.database import pool
 
 description = """
@@ -91,9 +100,19 @@ async def get_user_details(user=Depends(get_current_user)):
     return await get_user(user.id)
 
 
+@app.get("/api/refresh-auth", summary="Refresh authorization for user", response_model=dict)
+async def refresh_auth(refresh_token):
+    return await refresh_access_token(token=refresh_token)
+
+
 @app.post("/api/training-sessions", summary="Create new training session", response_model=dict)
 async def create_user_training_session(training_session: TrainingSession, user=Depends(get_current_user)):
     return await create_training_session(user_id=user.id, training_session=training_session)
+
+
+@app.get("/api/training-sessions", summary="Get all user training sessions", response_model=dict)
+async def get_user_training_sessions(user=Depends(get_current_user)):
+    return await get_training_sessions(user_id=user.id)
 
 
 @app.get("/api/climbs", summary="Get user climbs", response_model=dict)

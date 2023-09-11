@@ -120,7 +120,7 @@ class GymClimb(BaseModel):
 
 async def get_climbs(user_id: int):
     query_user = "SELECT EXISTS (SELECT 1 FROM users WHERE id = %(user_id)s);"
-    query_climbs = "SELECT * from CLIMBS WHERE user_id = %(user_id)s;"
+    query_climbs = "SELECT * from climbs WHERE user_id = %(user_id)s;"
     args = {"user_id": user_id}
     user_exists = await query_database_many(query=query_user, args=args)
     if not user_exists:

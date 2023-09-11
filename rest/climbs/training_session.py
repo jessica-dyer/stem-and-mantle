@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import HTTPException
 from pydantic import BaseModel
 
-from rest.database import db_execute_one
+from rest.database import db_execute_one, query_database_many
 
 
 class TrainingSession(BaseModel):
@@ -32,3 +32,18 @@ async def create_training_session(user_id: int, training_session: TrainingSessio
             }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating training session: {str(e)}") from e
+
+
+async def get_training_sessions(user_id: int):
+    query = """
+    SELECT * FROM training_sessions where user_id = %(user_id)s;
+    """
+    args = {"user_id": user_id}
+    training_sessions = await query_database_many(query=query, args=args)
+    if training_sessions:
+        data = [
+            {"id": session["id"], "date": session["date"], "notes": session["notes"]} for session in training_sessions
+        ]
+    else:
+        data = []
+    return {"training_sessions": data}
