@@ -13,6 +13,7 @@ from rest.climbs.climb import GymClimb, create_climb, get_climbs
 from rest.climbs.training_session import (
     TrainingSession,
     create_training_session,
+    edit_training_session,
     get_training_sessions,
 )
 from rest.database import pool
@@ -113,6 +114,11 @@ async def create_user_training_session(training_session: TrainingSession, user=D
 @app.get("/api/training-sessions", summary="Get all user training sessions", response_model=dict)
 async def get_user_training_sessions(user=Depends(get_current_user)):
     return await get_training_sessions(user_id=user.id)
+
+
+@app.post("/api/training-sessions/update", summary="Update training session", response_model=dict)
+async def update_user_training_session(training_session: TrainingSession, user=Depends(get_current_user)):
+    return await edit_training_session(user_id=user.id, training_session=training_session)
 
 
 @app.get("/api/climbs", summary="Get user climbs", response_model=dict)

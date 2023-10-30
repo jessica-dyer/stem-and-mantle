@@ -154,11 +154,17 @@ async def get_climbs(user_id: int):
 
 async def create_climb(user_id: int, climb: GymClimb):
     climb_score = CLIMBING_GRADE_SCORES.get(climb.grade_rated.value, None)
+    training_session_query = "SELECT * FROM training_sessions WHERE %(training_session_id)s = id;"
+    training_session = await db_execute_one(
+        query=training_session_query, args={"training_session_id": climb.training_session_id}
+    )
+    if not training_session:
+        raise HTTPException(status_code=404, detail=f"Training session not found: {climb.training_session_id}")
     args = {
         "user_id": user_id,
-        "training_session_id": climb.training_session_id,
+        "training_session_id": training_session["id"],
         "gym": climb.gym.value,
-        "date": climb.date,
+        "date": training_session["date"],
         "grade_rated": climb.grade_rated.value,
         "grade_feels": climb.grade_feels,
         "style": climb.style.value,
